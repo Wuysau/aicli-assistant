@@ -1,7 +1,7 @@
 {
   "name": "aicli-assistant",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Windows Terminal Workflow Assistant built with Tauri, React and TypeScript.",
   "license": "MIT",
   "type": "module",

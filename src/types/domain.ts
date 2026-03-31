@@ -2,6 +2,7 @@ export type AppView =
   | 'workbench'
   | 'template-library'
   | 'environment-lab'
+  | 'settings'
   | 'verification-lab'
 
 export type ShellType = 'powershell' | 'cmd' | 'wsl' | 'bash'
@@ -17,6 +18,13 @@ export type TaskType =
 export type RiskLevel = 'low' | 'medium' | 'high'
 
 export type ConfidenceLevel = 'low' | 'medium' | 'high'
+
+export type TemplateMatchCategory =
+  | 'matched'
+  | 'manual-template'
+  | 'empty-input'
+  | 'insufficient-match'
+  | 'off-topic'
 
 export type ResultKind =
   | 'command-generation'
@@ -57,7 +65,12 @@ export type TemplateSortMode = 'default' | 'recent' | 'frequent'
 
 export type RecentSearchSource = 'template-library' | 'workbench'
 
-export type AiMode = 'disabled' | 'supplemental'
+export type AiMode = 'rules-only' | 'supplemental'
+
+export type AiProviderType =
+  | 'openai-compatible'
+  | 'ollama'
+  | 'anthropic-compatible'
 
 export type AiSupplementTrigger =
   | 'no-result'
@@ -260,6 +273,7 @@ export interface AssistantRequest {
 }
 
 export interface TemplateMatchResult {
+  category: TemplateMatchCategory
   matched: boolean
   scenarioId?: ScenarioId
   suggestedScenarioIds: ScenarioId[]
@@ -280,12 +294,54 @@ export interface AiSupplement {
   safetyNotes: string[]
 }
 
+export interface AiProviderHeader {
+  id: string
+  key: string
+  value: string
+  enabled: boolean
+}
+
+export interface AiProviderConfig {
+  id: string
+  type: AiProviderType
+  name: string
+  enabled: boolean
+  isDefault: boolean
+  baseUrl: string
+  apiKey?: string
+  model: string
+  customHeaders: AiProviderHeader[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AiProviderStore {
+  schemaVersion: 1
+  mode: AiMode
+  defaultProviderId?: string
+  providers: AiProviderConfig[]
+  updatedAt: string
+}
+
+export interface AiProviderTestResult {
+  success: boolean
+  providerId: string
+  providerName: string
+  providerType: AiProviderType
+  message: string
+  checkedAt: string
+}
+
 export interface AiRuntimeStatus {
   enabled: boolean
   configured: boolean
   available: boolean
   mode: AiMode
   model?: string
+  providerCount: number
+  defaultProviderId?: string
+  defaultProviderName?: string
+  defaultProviderType?: AiProviderType
   message: string
 }
 

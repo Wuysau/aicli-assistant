@@ -219,6 +219,10 @@ const shouldRequestAiSupplement = (
     return undefined
   }
 
+  if (match.category === 'off-topic' || match.category === 'empty-input') {
+    return undefined
+  }
+
   if (!match.matched) {
     return 'no-result'
   }
@@ -544,6 +548,7 @@ export async function resolveWorkflowAssistant(
     return {
       result: undefined,
       match: {
+        category: 'insufficient-match',
         matched: false,
         scenarioId: undefined,
         suggestedScenarioIds: [],

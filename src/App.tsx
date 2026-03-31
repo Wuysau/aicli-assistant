@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import './App.css'
+import { AiProviderSettingsPage } from './components/AiProviderSettingsPage'
 import { AboutPanel } from './components/AboutPanel'
 import { AppNavigation } from './components/AppNavigation'
 import { BuiltInTemplatePanel } from './components/BuiltInTemplatePanel'
@@ -47,13 +48,11 @@ const initialStore = loadLocalAppStore()
 const initialWorkbenchState: AssistantViewState = {
   status: 'idle',
   card: {
-    title: '先选任务，再完成这一轮终端工作流。',
-    summary:
-      '当前版本优先使用本地模板库、关键词匹配和风险规则来给出推荐环境、推荐 Shell、推荐命令和下一步建议。',
+    title: '准备开始本次任务',
+    summary: '先选任务类型，输入目标或报错，再直接拿到推荐环境、推荐 shell 和推荐命令。',
     hints: [
-      '输入可以是自然语言、报错片段或短关键词，不必组织成聊天式长问题。',
-      '如果模板没有稳定命中，系统会先给出相近场景和补充建议，再决定是否请求 AI 解释补充。',
-      '发送到终端只会插入命令，不会自动回车执行。',
+      '输入尽量短而具体，例如“查 8103 端口占用”或“git push hook 被拒绝”。',
+      '推荐命令支持一键复制，也可发送到终端输入框但不会自动执行。',
     ],
     tone: 'info',
   },
@@ -73,22 +72,37 @@ const createNoResultState = (
     ...(aiSupplement?.relatedTemplateIds ?? []),
   ]).slice(0, 3)
 
+  if (match.category === 'off-topic') {
+    return {
+      status: 'no-result',
+      match,
+      card: {
+        title: '这次输入不属于终端任务面板的处理范围',
+        summary:
+          '当前版本只处理终端命令、报错排查和环境判断。AI 增强也只用于补充这些任务，不会变成通用聊天模式。',
+        hints: [
+          '如果你要执行终端任务，直接描述动作、报错片段或环境问题即可。',
+          '如果你想查看当前使用的 AI 提供商和模型，请到设置页查看默认 provider。',
+        ],
+        tone: 'warning',
+      },
+    }
+  }
+
   return {
     status: 'no-result',
     match,
     aiSupplement,
     card: {
-      title: '这次输入没有稳定命中现有模板。',
+      title: '这次没有稳定命中现有模板',
       summary:
         aiSupplement?.summary ??
         match.reason ??
-        '当前输入信息仍然偏少，暂时无法把任务稳定收敛到某一个内置场景。',
+        '当前输入信息还不够具体，暂时无法稳定归到某个内置场景。',
       hints:
         suggestionTitles.length > 0
-          ? [`可以先试试这些相近场景：${suggestionTitles.join('、')}`]
-          : [
-              '建议补充动作对象、报错关键词、端口号、日志文件名或执行环境，再重试一次。',
-            ],
+          ? [`可先试试这些相近场景：${suggestionTitles.join('、')}`]
+          : ['补充动作对象、报错关键词、端口号、日志文件名或执行环境后再试一次。'],
       tone: 'warning',
     },
   }
@@ -97,13 +111,9 @@ const createNoResultState = (
 const createErrorState = (): AssistantViewState => ({
   status: 'error',
   card: {
-    title: '本地分析流程暂时不可用。',
-    summary:
-      '这次没有成功生成结果，但模板库、最近记录和复制能力仍然可用。可以直接从模板库进入对应场景，或稍后重试。',
-    hints: [
-      '先检查输入里是否包含异常调试片段。',
-      '如果问题稳定可复现，建议优先从模板页进入对应场景。',
-    ],
+    title: '这次分析没有成功完成',
+    summary: '你仍然可以直接使用模板库、最近记录和复制能力，稍后再重试。',
+    hints: ['如果问题稳定可复现，优先从模板库进入对应场景会更稳。'],
     tone: 'error',
   },
 })
@@ -163,16 +173,14 @@ export default function App() {
             {
               id: 'verification-lab' as const,
               label: '验证台',
-              description: '仅开发环境可见，用于批量验证模板命中、风险等级和兜底状态。',
+              description: '只在开发环境显示，用于批量验证模板命中与兜底状态。',
             },
           ]
         : appViewOptions,
     [],
   )
 
-  const updatePreferences = (
-    partial: Partial<LocalAppStore['preferences']>,
-  ) => {
+  const updatePreferences = (partial: Partial<LocalAppStore['preferences']>) => {
     setLocalStore((currentStore) => updateUserPreferences(currentStore, partial))
   }
 
@@ -193,12 +201,11 @@ export default function App() {
       setResultState({
         status: 'empty',
         card: {
-          title: '先补充任务，再生成结果。',
-          summary:
-            '工作台至少需要一段任务描述、命令片段或报错信息，才能稳定命中模板并生成推荐结果。',
+          title: '先补充任务，再开始分析',
+          summary: '至少输入一段任务描述、命令片段或报错信息，面板才能生成推荐结果。',
           hints: [
-            '可以直接输入“查 8103 端口占用”“git push 被 hook 拒绝”“统计日志 ERROR 数量”这类短句。',
-            '如果已经知道要走哪个场景，也可以直接点击下方模板快捷入口。',
+            '例如“查 8103 端口占用”“git push hook 被拒绝”“统计日志 ERROR 数量”。',
+            '如果你已经知道场景，也可以先用下方常用模板直接进入。',
           ],
           tone: 'warning',
         },
@@ -209,10 +216,9 @@ export default function App() {
     setResultState({
       status: 'loading',
       card: {
-        title: '正在整理当前任务。',
-        summary:
-          '系统会先做本地模板匹配、环境判断和风险规则分析，再在必要时请求受约束的 AI 补充说明。',
-        hints: ['默认优先本地规则，不会把高风险动作的决定权交给 AI。'],
+        title: '正在生成本次建议',
+        summary: '系统会先走本地模板匹配、环境判断和风险规则，再在必要时补充 AI 说明。',
+        hints: ['默认不会把高风险动作的决策权交给 AI。'],
         tone: 'info',
       },
     })
@@ -234,12 +240,7 @@ export default function App() {
         match: resolution.match,
       })
 
-      const record = createRecentRecordFromResult(
-        request,
-        result,
-        resolution.match,
-        'workbench',
-      )
+      const record = createRecentRecordFromResult(request, result, resolution.match, 'workbench')
 
       setLocalStore((currentStore) => {
         let nextStore = persistRecentRecord(currentStore, record)
@@ -301,11 +302,9 @@ export default function App() {
     }
 
     setActiveView('workbench')
-    setActiveTask('use-template')
     setSelectedTemplateId(template.id)
     setInput(template.samplePrompt)
     updatePreferences({
-      taskType: 'use-template',
       selectedTemplateId: template.id,
     })
     void runWorkbenchRequest(nextRequest)
@@ -364,9 +363,9 @@ export default function App() {
     setResultState({
       status: 'idle',
       card: {
-        title: '验证用例已带入工作台。',
-        summary: '你可以直接继续运行，或在当前输入基础上修改细节再验证匹配结果。',
-        hints: ['这个入口只在开发环境显示，不会出现在发布版里。'],
+        title: '验证用例已带入主面板',
+        summary: '你可以直接继续运行，也可以改几个词再验证命中结果。',
+        hints: ['这个入口只在开发环境显示。'],
         tone: 'info',
       },
     })
@@ -374,8 +373,8 @@ export default function App() {
 
   const renderWorkbench = () => (
     <>
-      <section className="workbench-focus-grid">
-        <div className="workbench-task-column">
+      <section className="quick-command-shell">
+        <div className="quick-command-main">
           <TaskTypeGrid
             options={taskTypeOptions}
             activeTask={activeTask}
@@ -397,56 +396,59 @@ export default function App() {
           />
         </div>
 
-        <ResultPanel state={resultState} />
+        <div
+          className={`result-drawer-shell${resultState.status === 'success' ? ' is-open' : ''}`}
+        >
+          <ResultPanel state={resultState} />
+        </div>
       </section>
 
-      <section className="workspace-grid">
-        <div className="main-column">
+      <section className="secondary-zone">
+        <details className="secondary-fold" open={false}>
+          <summary>常用模板</summary>
           <BuiltInTemplatePanel
             templates={quickAccessTemplates}
             activeTemplateId={selectedTemplateId}
             onUseTemplate={handleUseTemplate}
             onBrowseLibrary={() => setActiveView('template-library')}
           />
+        </details>
 
-          <details className="secondary-fold">
-            <summary>查看最近记录</summary>
-            <RecentRecordPanel
-              records={localStore.recentRecords}
-              onPreviewRecord={handlePreviewRecord}
-              onReuseRecord={handleReuseRecord}
-              onDeleteRecord={handleDeleteRecord}
-            />
-          </details>
-        </div>
+        <details className="secondary-fold" open={false}>
+          <summary>最近记录</summary>
+          <RecentRecordPanel
+            records={localStore.recentRecords}
+            onPreviewRecord={handlePreviewRecord}
+            onReuseRecord={handleReuseRecord}
+            onDeleteRecord={handleDeleteRecord}
+          />
+        </details>
 
-        <div className="secondary-stack">
+        <details className="secondary-fold" open={false}>
+          <summary>关于与限制</summary>
           <AboutPanel />
-        </div>
+        </details>
       </section>
     </>
   )
 
   return (
-    <main className="app-shell">
-      <section className="hero-panel">
-        <div className="hero-copy">
-          <h1>把终端高频问题收敛成可判断、可复用、可持续使用的本地工作流。</h1>
-          <p className="hero-text">
-            AI CLI Assistant 当前定位为 Windows Terminal Workflow Assistant。它优先依赖本地模板库、
-            关键词匹配、环境判断和风险规则来完成一次任务闭环；只有在模板未稳定命中或解释仍然不足时，
-            才会请求受约束的 AI 补充说明。
+    <main className="app-shell compact-app-shell">
+      <section className="app-topbar panel">
+        <div className="app-topbar-copy">
+          <p className="eyebrow">AI CLI Assistant</p>
+          <h1>快速命令面板</h1>
+          <p className="topbar-summary">
+            聚焦一次终端任务闭环：输入问题，拿到推荐环境、推荐 shell 和推荐命令，然后直接复制或发送到终端。
           </p>
-          <div className="status-strip">
-            <span>首批 10 个内置场景</span>
-            <span>本地规则优先</span>
-            <span>仅插入终端，不自动执行</span>
-            <span>支持完全离线模式</span>
-          </div>
+        </div>
+        <div className="topbar-status">
+          <span className="panel-badge">模板与规则主流程</span>
+          <span className="panel-badge">AI 仅补充说明</span>
         </div>
       </section>
 
-      <section className="workspace-grid">
+      <section className="workspace-grid compact-workspace-grid">
         <div className="main-column">
           <AppNavigation
             options={viewOptions}
@@ -487,6 +489,8 @@ export default function App() {
           {activeView === 'environment-lab' ? (
             <EnvironmentLabPage onRecordPersist={persistRecord} />
           ) : null}
+
+          {activeView === 'settings' ? <AiProviderSettingsPage /> : null}
 
           {import.meta.env.DEV && activeView === 'verification-lab' ? (
             <DevVerificationPage onInjectCase={handleInjectVerificationCase} />

@@ -49,10 +49,10 @@ const confidenceLabelMap = {
 
 const statusLabelMap = {
   idle: '等待开始',
-  loading: '正在分析',
+  loading: '分析中',
   empty: '等待输入',
   'no-result': '未命中模板',
-  error: '发生异常',
+  error: '分析异常',
   success: '已生成',
 } as const
 
@@ -186,7 +186,7 @@ function renderEnvironmentSignals(payload: EnvironmentJudgementPayload) {
 
   return (
     <section className="result-block">
-      <h3>环境判断依据</h3>
+      <h3>判断依据</h3>
       <div className="signal-grid">
         {payload.supportingSignals.map((signal) => (
           <article key={signal.id} className="signal-card signal-supports">
@@ -226,6 +226,7 @@ function renderStateCard(state: AssistantViewState) {
       : []
 
   const nearMatches = state.status === 'no-result' ? toTemplateTitles(recommendationIds) : []
+  const isOffTopic = state.status === 'no-result' && state.match.category === 'off-topic'
 
   return (
     <section className={`state-card ${toneClassMap[state.card.tone]}`}>
@@ -243,7 +244,7 @@ function renderStateCard(state: AssistantViewState) {
       {state.status === 'no-result' ? (
         <>
           <div className="result-block priority-block">
-            <h3>为什么这次没有稳定命中</h3>
+            <h3>{isOffTopic ? '为什么这次不会继续走自由 AI 问答' : '为什么这次没有稳定命中'}</h3>
             <p>{state.match.reason}</p>
             {state.match.matchedTerms.length > 0 ? (
               <div className="tag-list">
@@ -256,7 +257,7 @@ function renderStateCard(state: AssistantViewState) {
             ) : null}
           </div>
 
-          {state.aiSupplement?.summary ? (
+          {state.aiSupplement?.summary && !isOffTopic ? (
             <div className="result-block priority-block">
               <h3>AI 补充判断</h3>
               <p>{state.aiSupplement.summary}</p>
@@ -271,8 +272,14 @@ function renderStateCard(state: AssistantViewState) {
           ) : null}
 
           <div className="result-block priority-block">
-            <h3>你可以先试这些相近场景</h3>
-            {nearMatches.length > 0 ? (
+            <h3>{isOffTopic ? '你可以直接这样使用当前工具' : '你可以先试这些相近场景'}</h3>
+            {isOffTopic ? (
+              <ul className="plain-list">
+                <li>直接输入终端动作、报错片段或环境判断问题。</li>
+                <li>如果想看当前 AI 提供商和模型，到设置页查看默认 provider。</li>
+                <li>这个面板不会处理“你是谁”这类通用对话。</li>
+              </ul>
+            ) : nearMatches.length > 0 ? (
               <div className="tag-list">
                 {nearMatches.map((item) => (
                   <span key={item} className="tag">
@@ -288,13 +295,19 @@ function renderStateCard(state: AssistantViewState) {
           <div className="result-block priority-block">
             <h3>下一步建议</h3>
             <ul className="plain-list">
-              {state.aiSupplement?.recommendedNextSteps?.length ? (
+              {state.aiSupplement?.recommendedNextSteps?.length && !isOffTopic ? (
                 state.aiSupplement.recommendedNextSteps.map((item) => <li key={item}>{item}</li>)
+              ) : isOffTopic ? (
+                <>
+                  <li>改写成终端动作、报错、日志或环境判断问题。</li>
+                  <li>如果已知场景，直接用模板库会更稳。</li>
+                  <li>AI 增强只补充终端任务，不会变成通用聊天模式。</li>
+                </>
               ) : (
                 <>
-                  <li>把目标动作说清楚，例如“查占用”“结束进程”“看容器状态”。</li>
-                  <li>补充对象或上下文，例如端口号、报错片段、工具名或日志文件名。</li>
-                  <li>如果已经知道大致场景，直接从模板库进入会更稳定。</li>
+                  <li>把动作说清楚，例如“查占用”“结束进程”“看容器状态”。</li>
+                  <li>补充端口号、错误关键词、日志文件名或执行环境。</li>
+                  <li>如果已经知道大致场景，直接从模板库进入会更稳。</li>
                 </>
               )}
             </ul>
@@ -360,7 +373,6 @@ export function ResultPanel({ state }: ResultPanelProps) {
   )
 
   const terminalEnabled = canPrefillTerminalInput()
-
   const successState = state.status === 'success' ? state : null
   const { primaryVariant } = useMemo(
     () =>
@@ -397,10 +409,10 @@ export function ResultPanel({ state }: ResultPanelProps) {
   if (state.status !== 'success') {
     return (
       <section className="panel result-panel">
-        <div className="panel-heading">
+        <div className="panel-heading compact-panel-heading">
           <div>
-            <p className="eyebrow">结果区</p>
-            <h2>等待本次分析结果</h2>
+            <p className="eyebrow">结果</p>
+            <h2>等待这次分析结果</h2>
           </div>
           <span className="panel-badge">{statusLabelMap[state.status]}</span>
         </div>
@@ -449,9 +461,7 @@ export function ResultPanel({ state }: ResultPanelProps) {
     } catch {
       const copied = await copyTextToClipboard(primaryVariant.command)
       setTerminalFeedbackMessage(
-        copied
-          ? '发送到终端失败，已自动退回复制方案。'
-          : '发送到终端失败，请改用复制按钮。',
+        copied ? '发送失败，已自动退回复制方案。' : '发送失败，请改用复制按钮。',
       )
     }
 
@@ -460,9 +470,9 @@ export function ResultPanel({ state }: ResultPanelProps) {
 
   return (
     <section className="panel result-panel">
-      <div className="panel-heading">
+      <div className="panel-heading compact-panel-heading">
         <div>
-          <p className="eyebrow">结果区</p>
+          <p className="eyebrow">结果</p>
           <h2>{result.title}</h2>
         </div>
         <span className="panel-badge">{resultKindLabelMap[result.kind]}</span>
@@ -476,7 +486,7 @@ export function ResultPanel({ state }: ResultPanelProps) {
           推荐 Shell：{primaryVariant?.shell ?? result.preferredShell}
         </span>
         <span className="result-badge tone-neutral">
-          命中置信度：{confidenceLabelMap[match.confidence]}
+          置信度：{confidenceLabelMap[match.confidence]}
         </span>
         <span
           className={`result-badge ${result.riskLevel === 'low' ? 'tone-neutral' : 'tone-warning'}`}
@@ -485,49 +495,7 @@ export function ResultPanel({ state }: ResultPanelProps) {
         </span>
       </div>
 
-      <section className="result-block priority-block">
-        <h3>建议先这样做</h3>
-        <p>
-          先在 <strong>{environmentLabelMap[result.recommendedEnvironment]}</strong> 中，用{' '}
-          <strong>{primaryVariant?.shell ?? result.preferredShell}</strong> 执行下面这条推荐命令，
-          再根据输出继续下一步。
-        </p>
-      </section>
-
-      <section className="result-block priority-block">
-        <h3>为什么推荐这个模板</h3>
-        <p>{match.reason}</p>
-        {match.matchedTerms.length > 0 ? (
-          <div className="tag-list">
-            {match.matchedTerms.map((term) => (
-              <span key={term} className="tag">
-                {term}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
       <div className="action-hero">
-        <div className="action-hero-copy">
-          <p className="result-summary">{result.summary}</p>
-          {result.inputEcho ? (
-            <div className="input-echo compact-echo">
-              <strong>本次输入</strong>
-              <p>{result.inputEcho}</p>
-            </div>
-          ) : null}
-          {result.aiSupplement?.summary ? (
-            <div className="priority-block">
-              <h3>AI 补充说明</h3>
-              <p>{result.aiSupplement.summary}</p>
-              <p className="action-feedback">
-                这里只补充解释、环境建议和相近模板，不负责决定高风险动作。
-              </p>
-            </div>
-          ) : null}
-        </div>
-
         <div className="action-command-card">
           <div className="action-command-meta">
             <strong>推荐命令</strong>
@@ -566,15 +534,41 @@ export function ResultPanel({ state }: ResultPanelProps) {
           </p>
           <p className="action-feedback">{terminalStatusMessage}</p>
         </div>
+
+        <div className="action-hero-copy">
+          <section className="priority-block compact-priority-block">
+            <h3>先这样做</h3>
+            <p>
+              先在 <strong>{environmentLabelMap[result.recommendedEnvironment]}</strong> 中使用{' '}
+              <strong>{primaryVariant?.shell ?? result.preferredShell}</strong> 执行推荐命令。
+            </p>
+          </section>
+          <p className="result-summary">{result.summary}</p>
+          {result.inputEcho ? (
+            <div className="input-echo compact-echo">
+              <strong>本次输入</strong>
+              <p>{result.inputEcho}</p>
+            </div>
+          ) : null}
+          {result.aiSupplement?.summary ? (
+            <div className="priority-block compact-priority-block">
+              <h3>AI 补充说明</h3>
+              <p>{result.aiSupplement.summary}</p>
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {environmentPayload ? renderEnvironmentSignals(environmentPayload) : null}
-
       {result.riskHints.length > 0 ? (
-        <section className="result-block priority-block">
-          <h3>先注意这个风险点</h3>
-          <p>{result.riskHints[0].reason}</p>
-        </section>
+        <details className="fold-panel">
+          <summary>查看风险提示</summary>
+          <div className="fold-content">
+            <div className="priority-block compact-priority-block">
+              <h3>执行前先注意这个风险</h3>
+              <p>{result.riskHints[0].reason}</p>
+            </div>
+          </div>
+        </details>
       ) : null}
 
       {result.nextSteps.length > 0 ? (
@@ -589,17 +583,40 @@ export function ResultPanel({ state }: ResultPanelProps) {
       ) : null}
 
       {relatedTemplateTitles.length > 0 ? (
-        <section className="result-block priority-block">
-          <h3>相近模板</h3>
-          <div className="tag-list">
-            {relatedTemplateTitles.map((title) => (
-              <span key={title} className="tag">
-                {title}
-              </span>
-            ))}
+        <details className="fold-panel">
+          <summary>查看相近模板</summary>
+          <div className="fold-content">
+            <div className="tag-list">
+              {relatedTemplateTitles.map((title) => (
+                <span key={title} className="tag">
+                  {title}
+                </span>
+              ))}
+            </div>
           </div>
-        </section>
+        </details>
       ) : null}
+
+      <details className="fold-panel">
+        <summary>查看命中原因和补充说明</summary>
+        <div className="fold-content">
+          <section className="result-block">
+            <h3>为什么推荐这个结果</h3>
+            <p>{match.reason}</p>
+            {match.matchedTerms.length > 0 ? (
+              <div className="tag-list">
+                {match.matchedTerms.map((term) => (
+                  <span key={term} className="tag">
+                    {term}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
+          {environmentPayload ? renderEnvironmentSignals(environmentPayload) : null}
+        </div>
+      </details>
 
       {secondaryVariants.length > 0 ? (
         <details className="fold-panel">

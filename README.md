@@ -2,14 +2,14 @@
 
 `aicli-assistant` 是一个基于 `Tauri 2 + React + TypeScript + Vite` 的 Windows Terminal Workflow Assistant。
 
-当前版本的目标不是做通用聊天机器人，也不是接管终端执行流程，而是把 Windows 本机场景下最常见的一批终端问题，整理成可命中、可解释、可复用、可持续使用的本地工作流工具。
+当前版本的重点不是做通用聊天机器人，而是把 Windows 本机场景下最常见的一批终端问题，整理成可命中、可解释、可复用、可持续使用的本地工作流工具。模板库、关键词匹配、环境判断和风险规则仍然是主流程；AI 只在必要时做受约束的补充说明。
 
 ## 项目定位
 
 - 面向 Windows 开发者和运维场景的终端工作流助手
 - 优先使用本地模板库、关键词匹配、环境判断和风险规则
-- 支持可选的 AI 补充说明，但 AI 只负责解释、环境建议和相近模板推荐
-- 不自动执行命令，不把高风险动作的决策交给 AI
+- 支持多 provider 的 AI 增强配置，但 AI 不负责决定高风险动作
+- 不自动执行命令，只支持复制或插入到终端输入框
 
 ## 当前核心能力
 
@@ -19,7 +19,8 @@
 - 规则驱动的风险提示
 - 最近记录、模板活跃度、偏好项和最近搜索的本地持久化
 - Windows 桌面端“发送到终端输入框但不自动执行”
-- 完全离线模式，以及“规则优先 + AI 补充”的混合模式
+- 多 provider AI 设置页、本地保存和测试连接
+- 完全离线模式，以及“规则优先 + AI 增强”的混合模式
 
 ## 当前支持场景
 
@@ -34,6 +35,29 @@
 9. SSH 连接失败基础排查
 10. 查看 Docker 容器状态
 
+## AI Provider 设置
+
+桌面版应用内已支持通用的 AI Providers 配置系统。
+
+当前支持的 provider 类型：
+
+- `OpenAI-compatible`
+- `Ollama / Local`
+- `Anthropic-compatible` 结构预留，当前版本暂不直接发起请求
+
+当前兼容示例：
+
+- OpenAI-compatible 服务：`https://api.openai.com/v1`
+- Gemini 的 OpenAI-compatible 接口：`https://generativelanguage.googleapis.com/v1beta/openai`
+- 自定义兼容端点：任意实现 OpenAI-compatible Chat Completions 的私有网关或第三方服务
+- Ollama 本地接口：`http://127.0.0.1:11434`
+
+说明：
+
+- 未配置任何 provider 时，基础规则 / 模板模式仍可正常使用
+- AI 增强模式只负责补充解释、环境建议和相近模板推荐
+- 配置会保存在用户本地应用目录，不会写进前端源码或仓库文件
+
 ## 技术栈
 
 - `Tauri 2`
@@ -42,20 +66,6 @@
 - `Vite`
 - `Vitest`
 - `ESLint`
-
-## 目录说明
-
-```text
-src/
-  components/   页面和结果展示组件
-  data/         本地结构化模板、静态选项、验证数据
-  mock/         初始种子数据
-  services/     匹配、风险规则、本地存储、AI 补充与桥接服务
-  test/         自动化验证
-  types/        领域类型定义
-src-tauri/
-  src/          Tauri 后端、终端桥接和 AI 补充命令
-```
 
 ## 如何运行
 
@@ -106,26 +116,7 @@ cmd /c npm.cmd run verify
 Copy-Item .env.example .env
 ```
 
-默认是完全离线/仅规则模式：
-
-```env
-AICLI_AI_MODE=disabled
-```
-
-如需启用 AI 补充模式，请在 `.env` 中配置：
-
-```env
-AICLI_AI_MODE=supplemental
-AICLI_AI_BASE_URL=https://api.openai.com/v1
-AICLI_AI_MODEL=gpt-4.1-mini
-AICLI_AI_API_KEY=your_api_key
-```
-
-注意：
-
-- `AICLI_*` 变量只由 Tauri 后端读取，不会写进前端源码
-- 不要给这些变量添加 `VITE_` 前缀
-- 未配置或调用失败时，应用会自动退回纯规则模式
+当前版本不再通过 `.env` 持久化 provider 密钥。Provider 相关配置统一在桌面应用的“AI 设置”页中管理，并保存在用户本地应用目录。`.env` 仅保留前端运行时所需的基础开发变量。
 
 ## 当前版本边界
 
@@ -138,16 +129,17 @@ AICLI_AI_API_KEY=your_api_key
 ## 已知限制
 
 - Web 版不能直接把命令发送到终端输入框
+- Web 版也不支持本地 provider 配置保存和测试连接
 - 终端插入能力当前不保证支持 VS Code 集成终端和所有第三方终端
 - 当前模板范围固定为首批 10 个场景
-- 当前本地存储实现基于浏览器式键值存储，已为后续迁移到 SQLite 预留数据结构
 - 当前安装包未做代码签名，Windows 可能出现 SmartScreen 提示
+- Anthropic-compatible 当前只预留了数据结构，尚未直接请求
 
 ## 后续路线
 
 - 用正式本地数据库替换当前轻量持久化实现
+- 继续增强 provider 切换、多 provider 管理和连接诊断
 - 增强模板详情、最近记录复用和结果复制体验
-- 继续收敛 Windows 本机场景下的风险规则和环境判断
 - 在不放弃规则主流程的前提下，逐步增强 AI 补充质量
 
 ## 开发说明

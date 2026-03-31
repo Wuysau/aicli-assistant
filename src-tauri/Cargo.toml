@@ -1,6 +1,6 @@
 [package]
 name = "aicli-assistant"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI CLI Assistant desktop shell"
 authors = ["Wuysau"]
 license = "MIT"

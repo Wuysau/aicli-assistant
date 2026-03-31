@@ -12,21 +12,20 @@ export function TaskTypeGrid({
   onSelect,
 }: TaskTypeGridProps) {
   return (
-    <section className="panel">
-      <div className="panel-heading">
+    <section className="panel task-switch-panel">
+      <div className="panel-heading compact-panel-heading">
         <div>
-          <p className="eyebrow">任务入口</p>
-          <h2>先选要解决的问题，再输入具体任务</h2>
+          <p className="eyebrow">任务类型</p>
+          <h2>先选任务，再给出输入</h2>
         </div>
-        <span className="panel-badge">{options.length} 个入口</span>
       </div>
 
-      <div className="task-grid">
+      <div className="task-grid compact-task-grid">
         {options.map((option) => (
           <button
             key={option.id}
             type="button"
-            className={`task-card${option.id === activeTask ? ' is-active' : ''}`}
+            className={`task-card compact-task-card${option.id === activeTask ? ' is-active' : ''}`}
             onClick={() => onSelect(option.id)}
           >
             <strong>{option.title}</strong>

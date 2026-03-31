@@ -14,44 +14,28 @@ export function BuiltInTemplatePanel({
   onBrowseLibrary,
 }: BuiltInTemplatePanelProps) {
   return (
-    <section className="panel template-panel">
-      <div className="panel-heading">
+    <section className="panel template-panel compact-template-panel">
+      <div className="panel-heading compact-panel-heading">
         <div>
-          <p className="eyebrow">模板快捷入口</p>
-          <h2>优先展示最近用过的场景，缩短下一次任务闭环</h2>
+          <p className="eyebrow">常用模板</p>
+          <h2>最近常用场景</h2>
         </div>
         <button type="button" className="ghost-button" onClick={onBrowseLibrary}>
-          打开模板库
+          模板库
         </button>
       </div>
 
-      <div className="template-list compact-template-list">
+      <div className="template-list compact-template-shortcuts">
         {templates.slice(0, 4).map((template) => (
-          <article
+          <button
             key={template.id}
-            className={`template-card${activeTemplateId === template.id ? ' is-active' : ''}`}
+            type="button"
+            className={`template-browser-card compact-template-shortcut${activeTemplateId === template.id ? ' is-active' : ''}`}
+            onClick={() => onUseTemplate(template)}
           >
-            <div className="template-meta">
-              <span>{template.category}</span>
-              <span>{template.supportedShells.join(' / ')}</span>
-            </div>
-            <h3>{template.title}</h3>
-            <p>{template.summary}</p>
-            <div className="tag-list">
-              {template.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="tag">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => onUseTemplate(template)}
-            >
-              直接使用
-            </button>
-          </article>
+            <strong>{template.title}</strong>
+            <span>{template.category}</span>
+          </button>
         ))}
       </div>
     </section>

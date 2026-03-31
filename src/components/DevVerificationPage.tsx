@@ -117,6 +117,7 @@ export function DevVerificationPage({ onInjectCase }: DevVerificationPageProps) 
       setResultState({
         status: 'no-result',
         match: {
+          category: 'insufficient-match',
           matched: false,
           suggestedScenarioIds: [],
           matchedTerms: [],

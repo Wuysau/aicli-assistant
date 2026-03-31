@@ -12,15 +12,15 @@ export function AppNavigation({
   onSelect,
 }: AppNavigationProps) {
   return (
-    <section className="panel">
-      <div className="panel-heading">
+    <section className="panel compact-nav-panel">
+      <div className="compact-nav-header">
         <div>
-          <p className="eyebrow">产品入口</p>
-          <h2>围绕终端工作流组织页面，而不是围绕聊天组织页面</h2>
+          <p className="eyebrow">入口切换</p>
+          <h2>主面板优先，其他功能放到次级入口</h2>
         </div>
       </div>
 
-      <div className="view-switcher">
+      <div className="view-switcher compact-view-switcher">
         {options.map((option) => (
           <button
             key={option.id}

@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { riskRuleCases } from '../data/riskRuleCases'
 import { scenarioVerificationPacks, verificationCases } from '../data/verificationCases'
+import { resetProviderForType } from '../services/aiSupplementService'
 import { evaluateRiskRules } from '../services/riskRuleEngine'
+import { matchWorkflowTemplate } from '../services/templateMatcher'
 import { runVerificationCase } from '../services/verificationRunner'
 import type {
+  AiProviderConfig,
   CommandVariant,
   RiskRuleVerificationCase,
   VerificationCase,
@@ -54,6 +57,33 @@ describe('workflow verification runner', () => {
   })
 })
 
+describe('template matcher guards', () => {
+  it('marks general model identity questions as off-topic', () => {
+    const match = matchWorkflowTemplate({
+      taskType: 'generate-command',
+      input: '你是什么模型',
+      preferredShell: 'powershell',
+      environment: 'windows-local',
+    })
+
+    expect(match.matched).toBe(false)
+    expect(match.category).toBe('off-topic')
+  })
+
+  it('keeps manual template selection scoped to explicit use-template requests', () => {
+    const match = matchWorkflowTemplate({
+      taskType: 'generate-command',
+      input: '随便写点别的',
+      preferredShell: 'powershell',
+      environment: 'windows-local',
+      templateId: 'port-occupancy',
+    })
+
+    expect(match.category).not.toBe('manual-template')
+    expect(match.scenarioId).not.toBe('port-occupancy')
+  })
+})
+
 describe('risk rule engine', () => {
   it.each(riskRuleCases)('detects $title', (testCase: RiskRuleVerificationCase) => {
     const command: CommandVariant = {
@@ -72,5 +102,53 @@ describe('risk rule engine', () => {
 
     expect(ruleIds).toEqual(testCase.expectedRuleIds)
     expect(highestLevel).toBe(testCase.expectedHighestLevel)
+  })
+})
+
+describe('AI provider helpers', () => {
+  it('falls back to type-specific defaults when switching to ollama', () => {
+    const provider: AiProviderConfig = {
+      id: 'provider-1',
+      type: 'openai-compatible',
+      name: 'DashScope',
+      enabled: true,
+      isDefault: true,
+      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      apiKey: 'sk-secret',
+      model: 'qwen-plus-2025-07-28',
+      customHeaders: [],
+      createdAt: '0',
+      updatedAt: '0',
+    }
+
+    const nextProvider = resetProviderForType(provider, 'ollama')
+
+    expect(nextProvider.type).toBe('ollama')
+    expect(nextProvider.baseUrl).toBe('http://127.0.0.1:11434')
+    expect(nextProvider.model).toBe('qwen2.5:7b')
+    expect(nextProvider.apiKey).toBe('')
+  })
+
+  it('falls back to openai-compatible defaults when switching back', () => {
+    const provider: AiProviderConfig = {
+      id: 'provider-2',
+      type: 'ollama',
+      name: 'Local Ollama',
+      enabled: true,
+      isDefault: false,
+      baseUrl: 'http://127.0.0.1:11434',
+      apiKey: '',
+      model: 'llama3.1:8b',
+      customHeaders: [],
+      createdAt: '0',
+      updatedAt: '0',
+    }
+
+    const nextProvider = resetProviderForType(provider, 'openai-compatible')
+
+    expect(nextProvider.type).toBe('openai-compatible')
+    expect(nextProvider.baseUrl).toBe('https://api.openai.com/v1')
+    expect(nextProvider.model).toBe('gpt-4.1-mini')
+    expect(nextProvider.apiKey).toBe('')
   })
 })
