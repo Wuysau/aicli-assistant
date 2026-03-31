@@ -1,91 +1,143 @@
 # AI CLI Assistant
 
-`aicli-assistant` 是一个基于 `Tauri 2 + React + TypeScript + Vite` 的桌面应用 MVP，目前先实现界面壳子与本地 mock 交互，不接真实 AI 接口。
+`aicli-assistant` 是一个基于 `Tauri 2 + React + TypeScript + Vite` 的 Windows Terminal Workflow Assistant。
 
-## 当前状态
+当前版本的目标不是做通用聊天机器人，也不是接管终端执行流程，而是把 Windows 本机场景下最常见的一批终端问题，整理成可命中、可解释、可复用、可持续使用的本地工作流工具。
 
-- 已完成项目初始化，包含 `src-tauri` 标准目录。
-- 首页已提供 MVP 壳子：标题、多行输入框、shell 选择、三个动作按钮、结果区域、最近记录占位区域。
-- 结果区目前由本地 mock 逻辑驱动，便于后续再接入真实 AI。
+## 项目定位
 
-## 目录结构
+- 面向 Windows 开发者和运维场景的终端工作流助手
+- 优先使用本地模板库、关键词匹配、环境判断和风险规则
+- 支持可选的 AI 补充说明，但 AI 只负责解释、环境建议和相近模板推荐
+- 不自动执行命令，不把高风险动作的决策交给 AI
 
-```text
-aicli-assistant/
-├─ public/
-├─ src/
-│  ├─ components/
-│  ├─ data/
-│  ├─ lib/
-│  ├─ types/
-│  ├─ App.css
-│  ├─ App.tsx
-│  ├─ index.css
-│  └─ main.tsx
-├─ src-tauri/
-│  ├─ capabilities/
-│  ├─ icons/
-│  ├─ src/
-│  ├─ Cargo.toml
-│  └─ tauri.conf.json
-├─ .env.example
-├─ .gitignore
-├─ package.json
-└─ README.md
-```
+## 当前核心能力
 
-## 本地运行
+- 首批 10 个高频终端场景模板
+- 基于关键词/意图的本地模板匹配
+- 推荐环境、推荐 Shell、推荐命令和下一步建议
+- 规则驱动的风险提示
+- 最近记录、模板活跃度、偏好项和最近搜索的本地持久化
+- Windows 桌面端“发送到终端输入框但不自动执行”
+- 完全离线模式，以及“规则优先 + AI 补充”的混合模式
 
-### 1. 安装依赖
+## 当前支持场景
 
-```bash
-npm install
-```
+1. 查端口占用
+2. 杀进程
+3. 统计日志 `ERROR / WARN / 500`
+4. Maven 跳过测试打包
+5. 查看 Git 用户名邮箱
+6. Git push hook 拒绝排查
+7. Java 端口冲突排查
+8. PowerShell 执行策略报错
+9. SSH 连接失败基础排查
+10. 查看 Docker 容器状态
 
-### 2. 运行 Web 版 MVP
+## 技术栈
 
-```bash
-npm run dev
-```
+- `Tauri 2`
+- `React 19`
+- `TypeScript`
+- `Vite`
+- `Vitest`
+- `ESLint`
 
-默认地址：
+## 目录说明
 
 ```text
-http://localhost:1420
+src/
+  components/   页面和结果展示组件
+  data/         本地结构化模板、静态选项、验证数据
+  mock/         初始种子数据
+  services/     匹配、风险规则、本地存储、AI 补充与桥接服务
+  test/         自动化验证
+  types/        领域类型定义
+src-tauri/
+  src/          Tauri 后端、终端桥接和 AI 补充命令
 ```
 
-### 3. 运行 Tauri 桌面版
+## 如何运行
 
-```bash
-npm run tauri:dev
+安装依赖：
+
+```powershell
+cmd /c npm.cmd install
 ```
 
-## Tauri 运行前置
+运行 Web 版：
 
-当前机器在初始化时缺少以下桌面端依赖，因此 `tauri dev` 还不能直接启动：
+```powershell
+cmd /c npm.cmd run dev
+```
 
-- Rust / Cargo
-- Visual Studio Build Tools（需包含 MSVC 与 Windows SDK）
+运行 Tauri 桌面版：
 
-补齐以上依赖后，即可直接执行 `npm run tauri:dev`。
+```powershell
+cmd /c npm.cmd run tauri:dev
+```
+
+## 工程校验
+
+```powershell
+cmd /c npm.cmd run lint
+cmd /c npm.cmd run typecheck
+cmd /c npm.cmd run test
+cmd /c npm.cmd run build
+cmd /c npm.cmd run verify
+```
 
 ## 环境变量
 
-复制 `.env.example` 后按需调整：
+复制样例文件：
 
-```bash
-cp .env.example .env
+```powershell
+Copy-Item .env.example .env
 ```
 
-当前支持：
+默认是完全离线/仅规则模式：
 
-- `VITE_APP_NAME`：应用显示名称
-- `VITE_APP_ENV`：运行环境标识
-- `VITE_MOCK_DELAY_MS`：本地 mock 返回延迟
+```env
+AICLI_AI_MODE=disabled
+```
 
-## 下一步建议
+如需启用 AI 补充模式，请在 `.env` 中配置：
 
-- 接入真实 AI 接口与统一请求层
-- 增加命令历史持久化
-- 把最近记录与结果详情接到 Tauri 本地存储
-- 增加执行前风险提示与命令复制功能
+```env
+AICLI_AI_MODE=supplemental
+AICLI_AI_BASE_URL=https://api.openai.com/v1
+AICLI_AI_MODEL=gpt-4.1-mini
+AICLI_AI_API_KEY=your_api_key
+```
+
+注意：
+
+- `AICLI_*` 变量只由 Tauri 后端读取，不会写进前端源码
+- 不要给这些变量添加 `VITE_` 前缀
+- 未配置或调用失败时，应用会自动退回纯规则模式
+
+## 当前版本边界
+
+- 当前不是通用聊天助手，也不是通用 coding agent
+- 不自动执行任何命令，只支持复制或插入终端输入框
+- “发送到终端输入框”当前优先支持 Windows Terminal 和经典控制台窗口
+- 不支持云同步、账号系统和多端同步
+- AI 只做受约束的结构化补充，不输出自由聊天内容
+
+## 已知限制
+
+- Web 版不能直接把命令发送到终端输入框
+- 终端插入能力当前不保证支持 VS Code 集成终端和所有第三方终端
+- 当前模板范围固定为首批 10 个场景
+- 当前本地存储实现基于浏览器式键值存储，已为后续迁移到 SQLite 预留数据结构
+
+## 后续路线
+
+- 用正式本地数据库替换当前轻量持久化实现
+- 增强模板详情、最近记录复用和结果复制体验
+- 继续收敛 Windows 本机场景下的风险规则和环境判断
+- 在不放弃规则主流程的前提下，逐步增强 AI 补充质量
+
+## 开发说明
+
+开发期说明、调试入口和验证方式见 [DEVELOPMENT.md](./DEVELOPMENT.md)。

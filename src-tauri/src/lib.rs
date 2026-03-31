@@ -1,7 +1,21 @@
+mod ai_supplement;
+mod terminal_prefill;
+
+use ai_supplement::{generate_ai_supplement, get_ai_runtime_status};
+use terminal_prefill::{
+  create_tracker, get_terminal_prefill_status, prefill_terminal_input, start_tracking,
+  TerminalTracker,
+};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  let terminal_tracker: TerminalTracker = create_tracker();
+
   tauri::Builder::default()
-    .setup(|app| {
+    .manage(terminal_tracker.clone())
+    .setup(move |app| {
+      let _ = dotenvy::dotenv();
+
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
@@ -9,8 +23,17 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      start_tracking(terminal_tracker.clone());
+
       Ok(())
     })
+    .invoke_handler(tauri::generate_handler![
+      prefill_terminal_input,
+      get_terminal_prefill_status,
+      get_ai_runtime_status,
+      generate_ai_supplement
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

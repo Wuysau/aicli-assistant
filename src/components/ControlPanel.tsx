@@ -1,18 +1,24 @@
 import { environmentOptions } from '../data/environmentOptions'
-import type { EnvironmentType, ShellType, TaskTypeOption, WorkflowTemplate } from '../types'
+import type {
+  EnvironmentType,
+  ScenarioId,
+  ShellType,
+  TaskTypeOption,
+  WorkflowTemplate,
+} from '../types'
 
 interface ControlPanelProps {
   activeTask: TaskTypeOption
   input: string
   preferredShell: ShellType
   environment: EnvironmentType
-  selectedTemplateId?: string
+  selectedTemplateId?: ScenarioId
   templates: WorkflowTemplate[]
   loading: boolean
   onInputChange: (value: string) => void
   onShellChange: (value: ShellType) => void
   onEnvironmentChange: (value: EnvironmentType) => void
-  onTemplateChange: (value: string) => void
+  onTemplateChange: (value: ScenarioId) => void
   onSubmit: () => void
 }
 
@@ -39,7 +45,7 @@ export function ControlPanel({
           <p className="eyebrow">输入区</p>
           <h2>{activeTask.title}</h2>
         </div>
-        <span className="panel-badge">Tool-first</span>
+        <span className="panel-badge">本地规则优先</span>
       </div>
 
       <label className="field-label" htmlFor="main-input">
@@ -72,7 +78,7 @@ export function ControlPanel({
         </div>
 
         <div className="selection-panel">
-          <p className="field-label">环境选择</p>
+          <p className="field-label">执行环境</p>
           <div className="environment-list">
             {environmentOptions.map((option) => (
               <button
@@ -91,14 +97,14 @@ export function ControlPanel({
 
       {activeTask.id === 'use-template' ? (
         <label className="template-picker">
-          <span className="field-label">模板选择</span>
+          <span className="field-label">指定模板</span>
           <select
             value={selectedTemplateId}
-            onChange={(event) => onTemplateChange(event.target.value)}
+            onChange={(event) => onTemplateChange(event.target.value as ScenarioId)}
           >
             {templates.map((template) => (
               <option key={template.id} value={template.id}>
-                {template.name}
+                {template.title}
               </option>
             ))}
           </select>
@@ -107,10 +113,10 @@ export function ControlPanel({
 
       <div className="panel-actions">
         <button type="button" className="primary-button" onClick={onSubmit}>
-          {loading ? '正在生成建议...' : '运行当前工作流'}
+          {loading ? '正在生成结果...' : '开始分析'}
         </button>
         <p className="helper-text">
-          当前是 mock 数据驱动，后续只需要替换服务层，不需要推倒页面结构。
+          默认优先使用本地模板库、关键词匹配和风险规则；只有必要时才会追加 AI 补充。
         </p>
       </div>
     </section>

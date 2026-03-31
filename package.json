@@ -2,13 +2,17 @@
   "name": "aicli-assistant",
   "private": true,
   "version": "0.1.0",
-  "description": "A Tauri + React + TypeScript MVP shell for an AI CLI assistant.",
+  "description": "Windows Terminal Workflow Assistant built with Tauri, React and TypeScript.",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 1420",
     "dev:web": "vite --host 0.0.0.0 --port 1420",
+    "typecheck": "tsc -b --pretty false && tsc -p tsconfig.vitest.json --pretty false",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
@@ -32,6 +36,7 @@
     "globals": "^17.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
-    "vite": "^8.0.1"
+    "vite": "^8.0.1",
+    "vitest": "^4.1.2"
   }
 }

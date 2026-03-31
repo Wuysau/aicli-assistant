@@ -15,9 +15,10 @@ export function TaskTypeGrid({
     <section className="panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">任务类型入口</p>
-          <h2>先选工作流，再输入问题</h2>
+          <p className="eyebrow">任务入口</p>
+          <h2>先选要解决的问题，再输入具体任务</h2>
         </div>
+        <span className="panel-badge">{options.length} 个入口</span>
       </div>
 
       <div className="task-grid">

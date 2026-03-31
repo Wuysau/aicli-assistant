@@ -4,36 +4,41 @@ interface BuiltInTemplatePanelProps {
   templates: WorkflowTemplate[]
   activeTemplateId?: string
   onUseTemplate: (template: WorkflowTemplate) => void
+  onBrowseLibrary: () => void
 }
 
 export function BuiltInTemplatePanel({
   templates,
   activeTemplateId,
   onUseTemplate,
+  onBrowseLibrary,
 }: BuiltInTemplatePanelProps) {
   return (
     <section className="panel template-panel">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">内置模板区</p>
-          <h2>先覆盖高频问题，再谈泛化</h2>
+          <p className="eyebrow">模板快捷入口</p>
+          <h2>优先展示最近用过的场景，缩短下一次任务闭环</h2>
         </div>
+        <button type="button" className="ghost-button" onClick={onBrowseLibrary}>
+          打开模板库
+        </button>
       </div>
 
-      <div className="template-list">
-        {templates.map((template) => (
+      <div className="template-list compact-template-list">
+        {templates.slice(0, 4).map((template) => (
           <article
             key={template.id}
             className={`template-card${activeTemplateId === template.id ? ' is-active' : ''}`}
           >
             <div className="template-meta">
               <span>{template.category}</span>
-              <span>{template.recommendedEnvironment}</span>
+              <span>{template.supportedShells.join(' / ')}</span>
             </div>
-            <h3>{template.name}</h3>
-            <p>{template.description}</p>
+            <h3>{template.title}</h3>
+            <p>{template.summary}</p>
             <div className="tag-list">
-              {template.tags.map((tag) => (
+              {template.tags.slice(0, 3).map((tag) => (
                 <span key={tag} className="tag">
                   {tag}
                 </span>
@@ -44,7 +49,7 @@ export function BuiltInTemplatePanel({
               className="secondary-button"
               onClick={() => onUseTemplate(template)}
             >
-              套用这个模板
+              直接使用
             </button>
           </article>
         ))}

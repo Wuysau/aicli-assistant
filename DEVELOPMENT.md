@@ -1,0 +1,68 @@
+# Development Notes
+
+## 本地开发
+
+安装依赖：
+
+```powershell
+cmd /c npm.cmd install
+```
+
+启动 Web 开发环境：
+
+```powershell
+cmd /c npm.cmd run dev
+```
+
+启动 Tauri 桌面开发环境：
+
+```powershell
+cmd /c npm.cmd run tauri:dev
+```
+
+## 常用校验命令
+
+```powershell
+cmd /c npm.cmd run lint
+cmd /c npm.cmd run typecheck
+cmd /c npm.cmd run test
+cmd /c npm.cmd run build
+cmd /c npm.cmd run verify
+```
+
+## 开发期验证入口
+
+- 开发环境会额外显示“验证台”
+- 验证台仅用于快速检查模板命中、推荐环境、风险等级和兜底状态
+- 该页面不会在发布版中显示
+
+## AI 补充说明
+
+- 默认关闭
+- 通过 `.env` 中的 `AICLI_*` 变量配置
+- 这些变量只由 Tauri 后端读取，不会暴露到前端 bundle
+- AI 只用于结构化补充说明，不负责决定高风险动作
+
+## 终端插入能力
+
+- 当前仅在 Tauri 桌面环境可用
+- 目标是“插入命令到终端输入框，但不自动执行”
+- 当前优先支持 Windows Terminal 和经典控制台窗口
+- 如果目标终端不可识别或桥接失败，会自动退回复制方案
+
+## 本地存储说明
+
+当前本地存储统一由应用级 store 管理，包含：
+
+- 最近记录
+- 模板活跃度
+- 用户偏好
+- 最近搜索关键词
+
+数据结构已经做了版本化，便于后续迁移到 SQLite 或其他正式本地存储方案。
+
+## 已知限制
+
+- 当前模板仍然固定为首批 10 个场景
+- Web 版不能把命令直接送入终端输入框
+- AI 补充不是主流程，未配置时也应保持完整可用
