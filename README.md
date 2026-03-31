@@ -77,6 +77,17 @@ cmd /c npm.cmd run dev
 cmd /c npm.cmd run tauri:dev
 ```
 
+生成 Windows 桌面安装包：
+
+```powershell
+cmd /c npm.cmd run tauri:build
+```
+
+当前会生成：
+
+- `src-tauri/target/release/bundle/nsis/*.exe`
+- `src-tauri/target/release/bundle/msi/*.msi`
+
 ## 工程校验
 
 ```powershell
@@ -130,6 +141,7 @@ AICLI_AI_API_KEY=your_api_key
 - 终端插入能力当前不保证支持 VS Code 集成终端和所有第三方终端
 - 当前模板范围固定为首批 10 个场景
 - 当前本地存储实现基于浏览器式键值存储，已为后续迁移到 SQLite 预留数据结构
+- 当前安装包未做代码签名，Windows 可能出现 SmartScreen 提示
 
 ## 后续路线
 

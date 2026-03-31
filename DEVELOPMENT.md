@@ -20,6 +20,17 @@ cmd /c npm.cmd run dev
 cmd /c npm.cmd run tauri:dev
 ```
 
+生成 Windows 安装包：
+
+```powershell
+cmd /c npm.cmd run tauri:build
+```
+
+默认产物位置：
+
+- `src-tauri/target/release/bundle/nsis/`
+- `src-tauri/target/release/bundle/msi/`
+
 ## 常用校验命令
 
 ```powershell
@@ -66,3 +77,4 @@ cmd /c npm.cmd run verify
 - 当前模板仍然固定为首批 10 个场景
 - Web 版不能把命令直接送入终端输入框
 - AI 补充不是主流程，未配置时也应保持完整可用
+- 发布构建目前未配置代码签名和自动更新

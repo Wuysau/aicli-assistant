@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "aicli-assistant",
+  "productName": "AI CLI Assistant",
   "version": "0.1.0",
   "identifier": "com.aicli.assistant",
   "build": {
@@ -27,7 +27,12 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "msi"],
+    "createUpdaterArtifacts": false,
+    "publisher": "Wuysau",
+    "homepage": "https://github.com/Wuysau/aicli-assistant",
+    "shortDescription": "Windows Terminal Workflow Assistant with local templates, rule-based matching and risk guidance.",
+    "longDescription": "AI CLI Assistant is a Windows Terminal Workflow Assistant built for demonstration, trial use and local validation. The current release keeps templates, matching rules, environment judgement and risk guidance as the primary workflow, and uses optional AI only for constrained supplemental explanations.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
