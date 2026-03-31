@@ -16,6 +16,7 @@ dist-ssr
 !.env.example
 src-tauri/target
 src-tauri/gen
+ai_terminal_copilot_mvp_设计文档V*.md
 
 # Editor directories and files
 .vscode/*
